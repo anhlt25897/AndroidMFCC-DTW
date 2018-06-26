@@ -1,12 +1,12 @@
 package firstsample.mfcc_extractor.com.firstsample.Support;
 
+
 import android.os.AsyncTask;
 
-import be.tarsos.dsp.AudioEvent;
-import be.tarsos.dsp.mfcc.MFCC;
-import firstsample.mfcc_extractor.com.firstsample.MMFCC;
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.AudioEvent;
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.mfcc.MFCC;
 
-public class ExtractMFCCsTask extends AsyncTask<float[], Void, Void> {
+public class ExtractMFCCsTask extends AsyncTask<AudioEvent, Void, Void> {
     public interface OnProcessSuccessListener {
         void success(double[] vector);
     }
@@ -20,9 +20,9 @@ public class ExtractMFCCsTask extends AsyncTask<float[], Void, Void> {
     }
 
     @Override
-    protected Void doInBackground(float[]... a) {
-        MMFCC mfcc = new MMFCC(Recorder.RECORDER_BUFFER_SIZE, mSampleRate, 39, 40, 300, 8000);
-        boolean isSuccess = mfcc.jprocess(a[0]);
+    protected Void doInBackground(AudioEvent... a) {
+        MFCC mfcc = new MFCC(a[0].getBufferSize(), mSampleRate, 39, 40, 300, 8000);
+        boolean isSuccess = mfcc.process(a[0]);
 
         if (!isSuccess) return null;
         double[] result = new double[mfcc.getMFCC().length];

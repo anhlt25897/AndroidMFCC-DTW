@@ -2,11 +2,11 @@ package firstsample.mfcc_extractor.com.firstsample.Support;
 
 import android.media.AudioRecord;
 
-import be.tarsos.dsp.AudioDispatcher;
-import be.tarsos.dsp.io.TarsosDSPAudioFormat;
-import be.tarsos.dsp.io.TarsosDSPAudioInputStream;
-import be.tarsos.dsp.io.android.AndroidAudioInputStream;
-import be.tarsos.dsp.io.android.AudioDispatcherFactory;
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.android.be.tarsos.dsp.io.android.AndroidAudioInputStream;
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.android.be.tarsos.dsp.io.android.AudioDispatcherFactory;
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.AudioDispatcher;
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.io.TarsosDSPAudioFormat;
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.io.TarsosDSPAudioInputStream;
 
 public class JAudioDispatcherFactory extends AudioDispatcherFactory {
     public static AudioDispatcher fromMic(int sampleRate, int audioBufferSize, int sampleSizeInBits,

@@ -14,19 +14,22 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.ShortBuffer;
+import java.util.Arrays;
 
-import be.tarsos.dsp.io.TarsosDSPAudioFloatConverter;
-import be.tarsos.dsp.io.TarsosDSPAudioFormat;
+import static android.media.AudioRecord.READ_NON_BLOCKING;
 
 public class Recorder {
     public Recorder(Activity activity, RecordActionListenner actionListenner) {
         requestPermission(activity);
         this.mActionListenner = actionListenner;
+        mBufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE,
+                RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, RECORDER_BUFFER_SIZE * RECORDER_CHANNELS);
+                RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, mBufferSize);
+    }
+
+    public AudioRecord getRecorder() {
+        return recorder;
     }
 
     private String getFilename() {
@@ -64,6 +67,14 @@ public class Recorder {
 
         isRecording = true;
 
+        String filename = getTempFilename();
+
+        try {
+            os = new FileOutputStream(filename);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
         recordingThread = new Thread(new Runnable() {
 
             @Override
@@ -74,8 +85,6 @@ public class Recorder {
 
         recordingThread.start();
     }
-
-    private long size = 0;
 
     public void stopRecording() {
         if (null != recorder) {
@@ -100,32 +109,17 @@ public class Recorder {
     }
 
     private void writeAudioDataToFile() {
-        final byte data[] = new byte[RECORDER_BUFFER_SIZE * RECORDER_CHANNELS];
-        String filename = getTempFilename();
-        FileOutputStream os = null;
-        int read;
+        final byte data[] = new byte[mBufferSize];
 
-        try {
-            os = new FileOutputStream(filename);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        int read;
 
         if (null != os) {
             while (isRecording) {
-                read = recorder.read(data, 0, RECORDER_BUFFER_SIZE * RECORDER_CHANNELS);
+                read = recorder.read(data, 0, mBufferSize);
+                Log.i("LOZZZZZZ", "-----: " + Arrays.toString(data));
                 if (AudioRecord.ERROR_INVALID_OPERATION != read) {
-                    try {
-                        os.write(data);
-                        float[] floatData = toFloatArray(data);
-                        mActionListenner.onRecording(floatData);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    writeData(data);
                 }
-                size += read;
-
-                Log.i("LOGGGGGG", "A. RECORDING - " + size);
             }
 
             try {
@@ -136,15 +130,13 @@ public class Recorder {
         }
     }
 
-    private float[] toFloatArray(byte[] in_buff) {
-        ShortBuffer sbuf = ByteBuffer.wrap(in_buff).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
-        short[] audioShorts = new short[sbuf.capacity()];
-        sbuf.get(audioShorts);
-        float[] audioFloats = new float[audioShorts.length];
-        for (int i = 0; i < audioShorts.length; i++) {
-            audioFloats[i] = ((float) audioShorts[i]) / 0x8000;
+    public void writeData(byte[] data) {
+        assert os != null;
+        try {
+            os.write(data);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return audioFloats;
     }
 
     private void deleteTempFile() {
@@ -160,7 +152,7 @@ public class Recorder {
         int channels = 2;
         long byteRate = RECORDER_BPP * RECORDER_SAMPLERATE * channels / 8;
 
-        byte[] data = new byte[RECORDER_BUFFER_SIZE];
+        byte[] data = new byte[mBufferSize];
 
         try {
             in = new FileInputStream(inFilename);
@@ -254,25 +246,25 @@ public class Recorder {
     public interface RecordActionListenner {
         void onStartRecorder();
 
-        void onRecording(float[] data);
-
         void onStopped();
     }
 
     private static final int REQUEST_PERMS = 13;
 
     public static final int RECORDER_BPP = 16;
-    public static final String AUDIO_RECORDER_FILE_EXT_WAV = ".wav";
-    public static final String AUDIO_RECORDER_FOLDER = "MFCCAudioRecorder";
-    public static final String AUDIO_RECORDER_TEMP_FILE = "record_temp.raw";
+    private static final String AUDIO_RECORDER_FILE_EXT_WAV = ".wav";
+    private static final String AUDIO_RECORDER_FOLDER = "MFCCAudioRecorder";
+    private static final String AUDIO_RECORDER_TEMP_FILE = "record_temp.raw";
     public static final int RECORDER_SAMPLERATE = 44100;
-    public static final int RECORDER_BUFFER_SIZE = 1024;
-    public static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_STEREO;
-    public static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+    public int mBufferSize;
+    private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_STEREO;
+    private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 
     private String currentFilePath;
     private Thread recordingThread = null;
     private boolean isRecording = false;
+    FileOutputStream os = null;
+
     private AudioRecord recorder;
     private RecordActionListenner mActionListenner;
     //endregion

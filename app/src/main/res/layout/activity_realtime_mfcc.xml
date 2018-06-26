@@ -44,5 +44,12 @@
             android:layout_height="wrap_content"
             android:layout_weight="1.0"
             android:text="Save MFCC" />
+
+        <Button
+            android:id="@+id/btnCmp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.0"
+            android:text="compare MFCC" />
     </LinearLayout>
 </LinearLayout>
