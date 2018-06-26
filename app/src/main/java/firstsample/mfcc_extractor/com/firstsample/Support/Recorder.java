@@ -60,6 +60,7 @@ public class Recorder {
     }
 
     public void startRecording() {
+        size = 0;
         int i = recorder.getState();
         if (i == 1)
             recorder.startRecording();
@@ -116,6 +117,7 @@ public class Recorder {
         if (null != os) {
             while (isRecording) {
                 read = recorder.read(data, 0, mBufferSize);
+                size += read;
                 Log.i("LOZZZZZZ", "-----: " + Arrays.toString(data));
                 if (AudioRecord.ERROR_INVALID_OPERATION != read) {
                     writeData(data);
@@ -166,6 +168,8 @@ public class Recorder {
             while (in.read(data) != -1) {
                 out.write(data);
             }
+
+            Log.i("LOHHHHHHH", "BYTES : " + totalDataLen + " DURATION : " + totalDataLen);
 
             in.close();
             out.close();
@@ -264,6 +268,7 @@ public class Recorder {
     private Thread recordingThread = null;
     private boolean isRecording = false;
     FileOutputStream os = null;
+    long size = 0;
 
     private AudioRecord recorder;
     private RecordActionListenner mActionListenner;

@@ -3,8 +3,8 @@ package firstsample.mfcc_extractor.com.firstsample.Support;
 
 import android.os.AsyncTask;
 
-import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.AudioEvent;
-import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.mfcc.MFCC;
+import firstsample.mfcc_extractor.com.firstsample.DroidTarsosDSP.core.AudioEvent;
+import firstsample.mfcc_extractor.com.firstsample.DroidTarsosDSP.core.mfcc.MFCC;
 
 public class ExtractMFCCsTask extends AsyncTask<AudioEvent, Void, Void> {
     public interface OnProcessSuccessListener {

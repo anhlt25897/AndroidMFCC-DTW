@@ -16,9 +16,9 @@ import firstsample.mfcc_extractor.com.firstsample.Support.ExtractMFCCsTask;
 import firstsample.mfcc_extractor.com.firstsample.Support.FileHelper;
 import firstsample.mfcc_extractor.com.firstsample.Support.JAudioDispatcherFactory;
 import firstsample.mfcc_extractor.com.firstsample.Support.Recorder;
-import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.AudioDispatcher;
-import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.AudioEvent;
-import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.AudioProcessor;
+import firstsample.mfcc_extractor.com.firstsample.DroidTarsosDSP.core.AudioDispatcher;
+import firstsample.mfcc_extractor.com.firstsample.DroidTarsosDSP.core.AudioEvent;
+import firstsample.mfcc_extractor.com.firstsample.DroidTarsosDSP.core.AudioProcessor;
 
 import static firstsample.mfcc_extractor.com.firstsample.Support.Recorder.RECORDER_BPP;
 import static firstsample.mfcc_extractor.com.firstsample.Support.Recorder.RECORDER_SAMPLERATE;
