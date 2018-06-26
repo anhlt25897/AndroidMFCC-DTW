@@ -60,8 +60,7 @@ package firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.
 
 import java.util.concurrent.Future;
 
-import be.tarsos.dsp.util.ConcurrencyUtils;
-
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.util.ConcurrencyUtils;
 
 
 /**

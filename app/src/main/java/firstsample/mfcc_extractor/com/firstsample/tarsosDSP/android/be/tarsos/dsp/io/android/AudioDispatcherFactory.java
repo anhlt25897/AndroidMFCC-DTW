@@ -25,10 +25,11 @@ package firstsample.mfcc_extractor.com.firstsample.tarsosDSP.android.be.tarsos.d
 
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import be.tarsos.dsp.AudioDispatcher;
-import be.tarsos.dsp.io.PipedAudioStream;
-import be.tarsos.dsp.io.TarsosDSPAudioFormat;
-import be.tarsos.dsp.io.TarsosDSPAudioInputStream;
+
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.AudioDispatcher;
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.io.PipedAudioStream;
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.io.TarsosDSPAudioFormat;
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.io.TarsosDSPAudioInputStream;
 
 /**
  * The Factory creates {@link AudioDispatcher} objects from the

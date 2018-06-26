@@ -5,21 +5,10 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.util.Log;
 
-import be.tarsos.dsp.AudioEvent;
-import be.tarsos.dsp.AudioProcessor;
-import be.tarsos.dsp.io.TarsosDSPAudioFloatConverter;
-import be.tarsos.dsp.io.TarsosDSPAudioFormat;
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.AudioEvent;
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.AudioProcessor;
+import firstsample.mfcc_extractor.com.firstsample.tarsosDSP.core.be.tarsos.dsp.io.TarsosDSPAudioFormat;
 
-/**
- * Plays audio from an {@link be.tarsos.dsp.AudioDispatcher} or {@link be.tarsos.dsp.AudioGenerator}
- * on an Android {@link AudioTrack}. This class only supports mono, 16 bit PCM. Depending on your device,
- * some sample rates could not be supported. This class uses the method that writes floats
- * to {@link AudioTrack} which is only introduced in Android API Level 21.
- *
- * @author Alex Mikhalev
- * @author Joren Six
- * @see AudioTrack
- */
 public class AndroidAudioPlayer implements AudioProcessor {
     /**
      * The default stream type to use.
