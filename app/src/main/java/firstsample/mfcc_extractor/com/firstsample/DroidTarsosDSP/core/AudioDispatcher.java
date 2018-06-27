@@ -45,8 +45,6 @@ import firstsample.mfcc_extractor.com.firstsample.DroidTarsosDSP.core.io.TarsosD
  * @author Joren Six
  */
 public class AudioDispatcher implements Runnable {
-
-
     /**
      * Log messages.
      */
@@ -57,6 +55,11 @@ public class AudioDispatcher implements Runnable {
      * moment.
      */
     private final TarsosDSPAudioInputStream audioInputStream;
+
+    /**
+     *
+     */
+    private NeedToReadBufferCallback mBufferCallback;
 
     /**
      * This buffer is reused again and again to store audio data using the float
@@ -145,7 +148,7 @@ public class AudioDispatcher implements Runnable {
      * @param bufferOverlap   How much consecutive buffers overlap (in samples). Half of the
      *                        AudioBufferSize is common (512, 1024) for an FFT.
      */
-    public AudioDispatcher(final TarsosDSPAudioInputStream stream, final int audioBufferSize, final int bufferOverlap) {
+    public AudioDispatcher(final TarsosDSPAudioInputStream stream, final int audioBufferSize, final int bufferOverlap, NeedToReadBufferCallback bufferCallback) {
         // The copy on write list allows concurrent modification of the list while
         // it is iterated. A nice feature to have when adding AudioProcessors while
         // the AudioDispatcher is running.
@@ -154,6 +157,7 @@ public class AudioDispatcher implements Runnable {
 
         format = audioInputStream.getFormat();
 
+        mBufferCallback = bufferCallback;
 
         setStepSizeAndOverlap(audioBufferSize, bufferOverlap);
 
@@ -290,8 +294,6 @@ public class AudioDispatcher implements Runnable {
             }
         }
 
-        Log.i("LOHHHHHHH", "run: " + bytesProcessed);
-
         // Notify all processors that no more data is available.
         // when stop() is called processingFinished is called explicitly, no need to do this again.
         // The explicit call is to prevent timing issues.
@@ -299,7 +301,6 @@ public class AudioDispatcher implements Runnable {
             stop();
         }
     }
-
 
     private void skipToStart() {
         long skipped = 0l;
@@ -395,7 +396,9 @@ public class AudioDispatcher implements Runnable {
         while (!stopped && !endOfStream && totalBytesRead < bytesToRead) {
             try {
                 bytesRead = audioInputStream.read(audioByteBuffer, offsetInBytes + totalBytesRead, bytesToRead - totalBytesRead);
-
+                Log.i("LOGGGGGGGGGG", "readBuffer: " + bytesToRead);
+//                audioByteBuffer = mBufferCallback.readBuffer(offsetInBytes + totalBytesRead, bytesToRead - totalBytesRead);
+//                bytesRead = audioByteBuffer.length;
             } catch (IndexOutOfBoundsException e) {
                 // The pipe decoder generates an out of bounds if end
                 // of stream is reached. Ugly hack...
@@ -422,9 +425,7 @@ public class AudioDispatcher implements Runnable {
                 // Send a smaller buffer through the chain.
                 byte[] audioByteBufferContent = audioByteBuffer;
                 audioByteBuffer = new byte[offsetInBytes + totalBytesRead];
-                for (int i = 0; i < audioByteBuffer.length; i++) {
-                    audioByteBuffer[i] = audioByteBufferContent[i];
-                }
+                System.arraycopy(audioByteBufferContent, 0, audioByteBuffer, 0, audioByteBuffer.length);
                 int totalSamplesRead = totalBytesRead / format.getFrameSize();
                 audioFloatBuffer = new float[offsetInSamples + totalBytesRead / format.getFrameSize()];
                 converter.toFloatArray(audioByteBuffer, offsetInBytes, audioFloatBuffer, offsetInSamples, totalSamplesRead);
@@ -470,5 +471,9 @@ public class AudioDispatcher implements Runnable {
      */
     public boolean isStopped() {
         return stopped;
+    }
+
+    public interface NeedToReadBufferCallback {
+        byte[] readBuffer(int off, int len);
     }
 }

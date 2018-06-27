@@ -7,32 +7,28 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Environment;
-import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 
-import static android.media.AudioRecord.READ_NON_BLOCKING;
+import firstsample.mfcc_extractor.com.firstsample.DroidTarsosDSP.core.AudioDispatcher;
 
-public class Recorder {
-    public Recorder(Activity activity, RecordActionListenner actionListenner) {
+public class Recorder implements AudioDispatcher.NeedToReadBufferCallback {
+    public String getCurrentPath() {
+        return currentPath;
+    }
+
+    public Recorder(Activity activity, RecordActionListener actionListenner) {
         requestPermission(activity);
         this.mActionListenner = actionListenner;
-        mBufferSize = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE,
-                RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, mBufferSize);
+                RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, RECORDER_BUFFER_SIZE);
     }
 
-    public AudioRecord getRecorder() {
-        return recorder;
-    }
-
-    private String getFilename() {
+    private void getFilename() {
         String filepath = Environment.getExternalStorageDirectory().getPath();
         File file = new File(filepath, AUDIO_RECORDER_FOLDER);
 
@@ -40,7 +36,7 @@ public class Recorder {
             file.mkdirs();
         }
 
-        return (file.getAbsolutePath() + "/" + System.currentTimeMillis() + AUDIO_RECORDER_FILE_EXT_WAV);
+        currentPath = (file.getAbsolutePath() + "/" + System.currentTimeMillis() + AUDIO_RECORDER_FILE_EXT_WAV);
     }
 
     private String getTempFilename() {
@@ -60,7 +56,6 @@ public class Recorder {
     }
 
     public void startRecording() {
-        size = 0;
         int i = recorder.getState();
         if (i == 1)
             recorder.startRecording();
@@ -71,13 +66,12 @@ public class Recorder {
         String filename = getTempFilename();
 
         try {
-            os = new FileOutputStream(filename);
+            mFileOutputStream = new FileOutputStream(filename);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
 
         recordingThread = new Thread(new Runnable() {
-
             @Override
             public void run() {
                 writeAudioDataToFile();
@@ -100,42 +94,40 @@ public class Recorder {
             recordingThread = null;
         }
 
-        mActionListenner.onStopped();
+        getFilename();
 
-        currentFilePath = getFilename();
+        copyWaveFile(getTempFilename(), currentPath);
 
-        copyWaveFile(getTempFilename(), currentFilePath);
         deleteTempFile();
 
+        mActionListenner.onStopped();
     }
 
     private void writeAudioDataToFile() {
-        final byte data[] = new byte[mBufferSize];
+        final byte data[] = new byte[RECORDER_BUFFER_SIZE];
 
         int read;
 
-        if (null != os) {
+        if (null != mFileOutputStream) {
             while (isRecording) {
-                read = recorder.read(data, 0, mBufferSize);
-                size += read;
-                Log.i("LOZZZZZZ", "-----: " + Arrays.toString(data));
+                read = recorder.read(data, 0, RECORDER_BUFFER_SIZE);
                 if (AudioRecord.ERROR_INVALID_OPERATION != read) {
                     writeData(data);
                 }
             }
 
             try {
-                os.close();
+                mFileOutputStream.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void writeData(byte[] data) {
-        assert os != null;
+    private void writeData(byte[] data) {
+        assert mFileOutputStream != null;
         try {
-            os.write(data);
+            mFileOutputStream.write(data);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -154,7 +146,7 @@ public class Recorder {
         int channels = 2;
         long byteRate = RECORDER_BPP * RECORDER_SAMPLERATE * channels / 8;
 
-        byte[] data = new byte[mBufferSize];
+        byte[] data = new byte[RECORDER_BUFFER_SIZE];
 
         try {
             in = new FileInputStream(inFilename);
@@ -168,8 +160,6 @@ public class Recorder {
             while (in.read(data) != -1) {
                 out.write(data);
             }
-
-            Log.i("LOHHHHHHH", "BYTES : " + totalDataLen + " DURATION : " + totalDataLen);
 
             in.close();
             out.close();
@@ -246,8 +236,15 @@ public class Recorder {
         }
     }
 
+    @Override
+    public byte[] readBuffer(int off, int len) {
+        byte[] buff = new byte[len];
+        recorder.read(buff, off, len);
+        return buff;
+    }
+
     //region VARS
-    public interface RecordActionListenner {
+    public interface RecordActionListener {
         void onStartRecorder();
 
         void onStopped();
@@ -259,18 +256,19 @@ public class Recorder {
     private static final String AUDIO_RECORDER_FILE_EXT_WAV = ".wav";
     private static final String AUDIO_RECORDER_FOLDER = "MFCCAudioRecorder";
     private static final String AUDIO_RECORDER_TEMP_FILE = "record_temp.raw";
+
     public static final int RECORDER_SAMPLERATE = 44100;
-    public int mBufferSize;
+    public static final int RECORDER_BUFFER_SIZE = 1024;
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_STEREO;
     private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 
-    private String currentFilePath;
     private Thread recordingThread = null;
     private boolean isRecording = false;
-    FileOutputStream os = null;
-    long size = 0;
 
+    private FileOutputStream mFileOutputStream = null;
+
+    private String currentPath;
     private AudioRecord recorder;
-    private RecordActionListenner mActionListenner;
+    private RecordActionListener mActionListenner;
     //endregion
 }

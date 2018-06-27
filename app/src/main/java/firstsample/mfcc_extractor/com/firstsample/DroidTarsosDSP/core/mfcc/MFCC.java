@@ -46,10 +46,6 @@ public class MFCC implements AudioProcessor {
     private FFT fft;
     private int samplesPerFrame; 
     private float sampleRate;
-    
-    public MFCC(int samplesPerFrame, int sampleRate){
-    	this(samplesPerFrame, sampleRate, 30, 30, 133.3334f, ((float)sampleRate)/2f);
-    }
 
     public MFCC(int samplesPerFrame, float sampleRate, int amountOfCepstrumCoef, int amountOfMelFilters, float lowerFilterFreq, float upperFilterFreq) {
         this.samplesPerFrame = samplesPerFrame; 
