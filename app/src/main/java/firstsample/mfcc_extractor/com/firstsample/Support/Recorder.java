@@ -59,7 +59,6 @@ public class Recorder implements AudioDispatcher.NeedToReadBufferCallback {
         int i = recorder.getState();
         if (i == 1)
             recorder.startRecording();
-        mActionListenner.onStartRecorder();
 
         isRecording = true;
 
@@ -71,14 +70,7 @@ public class Recorder implements AudioDispatcher.NeedToReadBufferCallback {
             e.printStackTrace();
         }
 
-        recordingThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                writeAudioDataToFile();
-            }
-        }, "AudioRecorder Thread");
-
-        recordingThread.start();
+        mActionListenner.onStartRecorder();
     }
 
     public void stopRecording() {
@@ -91,7 +83,6 @@ public class Recorder implements AudioDispatcher.NeedToReadBufferCallback {
             recorder.release();
 
             recorder = null;
-            recordingThread = null;
         }
 
         getFilename();
@@ -116,11 +107,6 @@ public class Recorder implements AudioDispatcher.NeedToReadBufferCallback {
                 }
             }
 
-            try {
-                mFileOutputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 
@@ -237,10 +223,17 @@ public class Recorder implements AudioDispatcher.NeedToReadBufferCallback {
     }
 
     @Override
-    public byte[] readBuffer(int off, int len) {
-        byte[] buff = new byte[len];
-        recorder.read(buff, off, len);
-        return buff;
+    public void writeBuffer(byte[] audioByteBuffer) {
+        writeData(audioByteBuffer);
+    }
+
+    @Override
+    public void onDone() {
+
+    }
+
+    public AudioRecord getRecorder() {
+        return recorder;
     }
 
     //region VARS
@@ -262,7 +255,6 @@ public class Recorder implements AudioDispatcher.NeedToReadBufferCallback {
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_STEREO;
     private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 
-    private Thread recordingThread = null;
     private boolean isRecording = false;
 
     private FileOutputStream mFileOutputStream = null;

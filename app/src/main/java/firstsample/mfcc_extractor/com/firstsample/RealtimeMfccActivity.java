@@ -2,14 +2,12 @@ package firstsample.mfcc_extractor.com.firstsample;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,15 +15,16 @@ import firstsample.mfcc_extractor.com.firstsample.DroidTarsosDSP.android.AudioDi
 import firstsample.mfcc_extractor.com.firstsample.DroidTarsosDSP.core.AudioDispatcher;
 import firstsample.mfcc_extractor.com.firstsample.DroidTarsosDSP.core.AudioEvent;
 import firstsample.mfcc_extractor.com.firstsample.DroidTarsosDSP.core.AudioProcessor;
-import firstsample.mfcc_extractor.com.firstsample.DroidTarsosDSP.core.mfcc.MFCC;
+import firstsample.mfcc_extractor.com.firstsample.Support.ExtractMFCCsTask;
 import firstsample.mfcc_extractor.com.firstsample.Support.FileHelper;
 import firstsample.mfcc_extractor.com.firstsample.Support.Recorder;
 
-import static firstsample.mfcc_extractor.com.firstsample.Support.Recorder.RECORDER_BUFFER_SIZE;
 import static firstsample.mfcc_extractor.com.firstsample.Support.Recorder.RECORDER_BPP;
+import static firstsample.mfcc_extractor.com.firstsample.Support.Recorder.RECORDER_BUFFER_SIZE;
 import static firstsample.mfcc_extractor.com.firstsample.Support.Recorder.RECORDER_SAMPLERATE;
 
-public class RealtimeMfccActivity extends AppCompatActivity implements Recorder.RecordActionListener, View.OnClickListener {
+public class RealtimeMfccActivity extends AppCompatActivity implements ExtractMFCCsTask.OnProcessSuccessListener
+        , Recorder.RecordActionListener, View.OnClickListener {
     //region SYSTEM EVENTS
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -40,90 +39,78 @@ public class RealtimeMfccActivity extends AppCompatActivity implements Recorder.
 
     //region VIEW EVENTS
     @Override
+    public void success(double[] vector) {
+        this.vectors.add(vector);
+    }
+
+    @Override
     public void onStartRecorder() {
-        mDuration = System.currentTimeMillis();
-        mtvInfo.setText("===================== \n");
-        mtvInfo.append("\n- START RECORD");
-        ((ScrollView) findViewById(R.id.scroll)).fullScroll(View.FOCUS_DOWN);
     }
 
     @Override
     public void onStopped() {
-        mtvInfo.append("\n- DURATION : " + (System.currentTimeMillis() - mDuration) + " ms");
-        mtvInfo.append("\n- STOP RECORD");
-        mtvInfo.append("\n ----- ");
-        mtvInfo.append("\n- START EXTRACTION");
-        mtvInfo.append("\n ... ");
-        ((ScrollView) findViewById(R.id.scroll)).fullScroll(View.FOCUS_DOWN);
-        mDuration = System.currentTimeMillis();
-        this.extract();
-        mIsRecording = false;
     }
 
     private void extract() {
-        mMFCCVectors = new ArrayList<>();
-        FileInputStream fileInputStream = null;
-        try {
-            fileInputStream = new FileInputStream(new File(mRecorder.getCurrentPath()));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        assert fileInputStream != null;
-
-        AudioDispatcher dispatcher = AudioDispatcherFactory.fromFile(RECORDER_SAMPLERATE, RECORDER_BUFFER_SIZE, RECORDER_BPP,
-                0, fileInputStream, 2, mRecorder);
-
-        dispatcher.addAudioProcessor(new AudioProcessor() {
+        new Thread(new Runnable() {
             @Override
-            public boolean process(AudioEvent audioEvent) {
-                MFCC mfcc = new MFCC(1024, 44100, 39, 40, 300, 8000);
-                boolean isSuccess = mfcc.process(audioEvent);
-
-                if (isSuccess) {
-                    double[] result = new double[mfcc.getMFCC().length];
-                    int i = 0;
-                    for (double d : mfcc.getMFCC()) {
-                        result[i++] = d;
+            public void run() {
+                dispatcher = AudioDispatcherFactory.fromMic(RECORDER_SAMPLERATE, RECORDER_BUFFER_SIZE, RECORDER_BPP,
+                        0, mRecorder.getRecorder(), 2, mRecorder);
+                dispatcher.addAudioProcessor(new AudioProcessor() {
+                    @Override
+                    public boolean process(AudioEvent audioEvent) {
+                        ExtractMFCCsTask task = new ExtractMFCCsTask(RealtimeMfccActivity.this, RECORDER_SAMPLERATE);
+                        task.execute(audioEvent);
+                        return true;
                     }
-                    mMFCCVectors.add(result);
-                }
-                return true;
-            }
 
-            @Override
-            public void processingFinished() {
-                mtvInfo.append("\n- EXTRACTION DURATION : " + (System.currentTimeMillis() - mDuration) + " ms");
-                mDuration = System.currentTimeMillis();
-                mtvInfo.append("\n- FINISH EXTRACTION");
-                mtvInfo.append("\n- MFCC COUNT : " + mMFCCVectors.size() + "\n");
-                findViewById(R.id.btnSave).setEnabled(true);
-                ((ScrollView) findViewById(R.id.scroll)).fullScroll(View.FOCUS_DOWN);
+                    @Override
+                    public void processingFinished() {
+                        Log.i("LOGGGGGGGGG", "processingFinished: " + vectors.size());
+                    }
+                });
+                dispatcher.run();
             }
-        });
-        dispatcher.run();
+        }).start();
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btnStart: {
-                mIsRecording = true;
                 enableButtons(true);
                 findViewById(R.id.btnSave).setEnabled(false);
                 mRecorder = new Recorder(this, this);
+                vectors = new ArrayList<>();
+                extract();
                 mRecorder.startRecording();
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                enableButtons(false);
+                                findViewById(R.id.btnSave).setEnabled(true);
+                                dispatcher.stop();
+                                mRecorder.stopRecording();
+                            }
+                        });
+                    }
+                }, 3000);
                 break;
             }
             case R.id.btnStop: {
-                mIsRecording = false;
                 enableButtons(false);
+                findViewById(R.id.btnSave).setEnabled(true);
+                dispatcher.stop();
                 mRecorder.stopRecording();
                 break;
             }
             case R.id.btnSave: {
                 StringBuilder builder = new StringBuilder();
-                for (double[] vector : mMFCCVectors) {
+                for (double[] vector : vectors) {
                     StringBuilder cell = new StringBuilder();
                     for (double vt : vector) {
                         cell.append(String.valueOf(vt)).append(", ");
@@ -161,10 +148,9 @@ public class RealtimeMfccActivity extends AppCompatActivity implements Recorder.
     //endregion
 
     //region VARS
-    boolean mIsRecording = false;
     private Recorder mRecorder;
-    private List<double[]> mMFCCVectors;
+    private List<double[]> vectors;
     private TextView mtvInfo;
-    private long mDuration = 0;
+    private AudioDispatcher dispatcher;
     //endregion
 }

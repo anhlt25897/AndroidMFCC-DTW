@@ -396,9 +396,7 @@ public class AudioDispatcher implements Runnable {
         while (!stopped && !endOfStream && totalBytesRead < bytesToRead) {
             try {
                 bytesRead = audioInputStream.read(audioByteBuffer, offsetInBytes + totalBytesRead, bytesToRead - totalBytesRead);
-                Log.i("LOGGGGGGGGGG", "readBuffer: " + bytesToRead);
-//                audioByteBuffer = mBufferCallback.readBuffer(offsetInBytes + totalBytesRead, bytesToRead - totalBytesRead);
-//                bytesRead = audioByteBuffer.length;
+                mBufferCallback.writeBuffer(audioByteBuffer);
             } catch (IndexOutOfBoundsException e) {
                 // The pipe decoder generates an out of bounds if end
                 // of stream is reached. Ugly hack...
@@ -412,6 +410,8 @@ public class AudioDispatcher implements Runnable {
                 totalBytesRead += bytesRead;
             }
         }
+
+        mBufferCallback.onDone();
 
         if (endOfStream) {
             // Could not read a full buffer from the stream, there are two options:
@@ -474,6 +474,8 @@ public class AudioDispatcher implements Runnable {
     }
 
     public interface NeedToReadBufferCallback {
-        byte[] readBuffer(int off, int len);
+        void writeBuffer(byte[] audioByteBuffer);
+
+        void onDone();
     }
 }
