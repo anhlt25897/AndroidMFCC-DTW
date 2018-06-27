@@ -1,6 +1,5 @@
 package firstsample.mfcc_extractor.com.firstsample.Support;
 
-import android.content.Context;
 import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
@@ -50,22 +49,21 @@ public class FileHelper {
         return resList;
     }
 
-    public static boolean saveToFile(String data) {
+    public static void saveToFile(String data) {
         try {
             new File(path).mkdir();
             File file = new File(path + fileName);
+            file.delete();
             if (!file.exists()) {
                 file.createNewFile();
             }
             FileOutputStream fileOutputStream = new FileOutputStream(file, true);
             fileOutputStream.write((data + System.getProperty("line.separator")).getBytes());
 
-            return true;
         } catch (FileNotFoundException ex) {
             Log.d(TAG, ex.getMessage());
         } catch (IOException ex) {
             Log.d(TAG, ex.getMessage());
         }
-        return false;
     }
 }

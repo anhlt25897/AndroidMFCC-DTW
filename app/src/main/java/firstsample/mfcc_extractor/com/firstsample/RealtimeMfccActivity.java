@@ -67,7 +67,12 @@ public class RealtimeMfccActivity extends AppCompatActivity implements ExtractMF
 
                     @Override
                     public void processingFinished() {
-                        Log.i("LOGGGGGGGGG", "processingFinished: " + vectors.size());
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mtvInfo.setText("processingFinished: " + vectors.size());
+                            }
+                        });
                     }
                 });
                 dispatcher.run();
@@ -101,13 +106,6 @@ public class RealtimeMfccActivity extends AppCompatActivity implements ExtractMF
                 }, 3000);
                 break;
             }
-            case R.id.btnStop: {
-                enableButtons(false);
-                findViewById(R.id.btnSave).setEnabled(true);
-                dispatcher.stop();
-                mRecorder.stopRecording();
-                break;
-            }
             case R.id.btnSave: {
                 StringBuilder builder = new StringBuilder();
                 for (double[] vector : vectors) {
@@ -132,7 +130,6 @@ public class RealtimeMfccActivity extends AppCompatActivity implements ExtractMF
     //region SUPPORTS
     private void setButtonHandlers() {
         findViewById(R.id.btnStart).setOnClickListener(this);
-        findViewById(R.id.btnStop).setOnClickListener(this);
         findViewById(R.id.btnSave).setOnClickListener(this);
         findViewById(R.id.btnCmp).setOnClickListener(this);
     }
@@ -143,7 +140,8 @@ public class RealtimeMfccActivity extends AppCompatActivity implements ExtractMF
 
     private void enableButtons(boolean isRecording) {
         enableButton(R.id.btnStart, !isRecording);
-        enableButton(R.id.btnStop, isRecording);
+        enableButton(R.id.btnSave, !isRecording);
+        enableButton(R.id.btnCmp, !isRecording);
     }
     //endregion
 
